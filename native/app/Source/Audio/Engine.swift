@@ -40,7 +40,10 @@ class Engine {
 
     // Attach Source
     engine.setInputDevice(sources.system.device)
-    format = engine.inputNode.inputFormat(forBus: 0)
+    // inputNode is a source in the graph. A tap-backed aggregate exposes its
+    // captured channels on the node's output side; its input-side format is
+    // correctly 0 channels and cannot be used for a connection.
+    format = engine.inputNode.outputFormat(forBus: 0)
     Console.log("Set Input Engine format to: \(format.description)")
 
     // Attach Effects
