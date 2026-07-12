@@ -45,8 +45,8 @@
 	<string>Copyright © 2017 Roman Kisil. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>eqMac dB uses microphone permission to capture and process system audio.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>eqMac dB captures system audio sent to its virtual output so it can apply volume and equalization before playback through the selected DAC.</string>
 	<key>NSPrincipalClass</key>
 	<string>EventInterceptor</string>
 </dict>

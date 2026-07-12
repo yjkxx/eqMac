@@ -28,8 +28,14 @@ class Outputs {
   }
   
   static func shouldAutoSelect (_ device: AudioDevice) -> Bool {
-    let types: [TransportType] = [.bluetooth, .bluetoothLE, .builtIn]
-    return isDeviceAllowed(device) && types.contains(device.transportType!)
+    return isTargetDevice(device)
+  }
+
+  static func isTargetDevice(_ device: AudioDevice) -> Bool {
+    // The exact UID identifies this DAC on the user's Mac. The name fallback
+    // keeps activation working if the USB location/serial component changes.
+    return device.uid == Constants.TARGET_OUTPUT_DEVICE_UID
+      || device.name == Constants.TARGET_OUTPUT_DEVICE_NAME
   }
   
   static var allowedDevices: [AudioDevice] {

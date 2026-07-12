@@ -8,7 +8,6 @@
 
 import Foundation
 import AMCoreAudio
-import AVFoundation
 
 class InputSource {
   let device: AudioDevice
@@ -16,26 +15,4 @@ class InputSource {
   public init(device: AudioDevice) {
     self.device = device
   }
-
-  static var hasPermission: Bool {
-    get {
-      if #available(OSX 10.14, *) {
-        let status = AVCaptureDevice.authorizationStatus(for: AVMediaType.audio)
-        return status == .authorized
-      } else {
-        return true
-      }
-    }
-  }
-  
-  static func requestPermission (_ callback: @escaping (Bool) -> Void) {
-    if #available(OSX 10.14, *) {
-      AVCaptureDevice.requestAccess(for: AVMediaType.audio) { granted in
-        callback(granted)
-      }
-    } else {
-      callback(true)
-    }
-  }
 }
-

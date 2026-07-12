@@ -137,7 +137,7 @@ class Output {
   }
   
   private func computeOffset() {
-    let inputDevice = Driver.device!
+    let inputDevice = Application.engine!.sources.system.device
     let inputOffset = inputDevice.safetyOffset(direction: .recording)
     let inputBuffer = inputDevice.bufferFrameSize(direction: .recording)
     let outputOffset = device.safetyOffset(direction: .playback)

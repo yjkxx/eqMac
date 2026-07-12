@@ -305,12 +305,6 @@ class EQMControl: EQMObject {
   static func setPropertyData(client: EQMClient?, objectID: AudioObjectID?, address: AudioObjectPropertyAddress, data: UnsafeRawPointer, changedProperties: inout [AudioObjectPropertyAddress]) -> OSStatus {
     switch objectID {
     case kObjectID_Volume_Output_Master:
-      // While the companion app is running it owns the volume keys and writes
-      // exact dB targets. Ignore competing SystemUIServer/CoreAudio scalar
-      // writes so they cannot race the app back to a linear step.
-      guard !EQMClients.isAppClientPresent || client?.isAppClient == true else {
-        return noErr
-      }
       switch address.mSelector {
       case kAudioLevelControlPropertyScalarValue:
         // For the scalar volume, we clamp the new value to [0, 1]. Note that if this
@@ -377,9 +371,6 @@ class EQMControl: EQMObject {
       }
 
     case kObjectID_Mute_Output_Master:
-      guard !EQMClients.isAppClientPresent || client?.isAppClient == true else {
-        return noErr
-      }
       switch address.mSelector {
       case kAudioBooleanControlPropertyValue:
         let mutedInt = data.load(as: UInt32.self)

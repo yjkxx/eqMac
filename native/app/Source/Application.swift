@@ -11,7 +11,6 @@ import Cocoa
 import AMCoreAudio
 import Dispatch
 import EmitterKit
-import AVFoundation
 import SwiftyUserDefaults
 import SwiftyJSON
 import ReSwift
@@ -42,6 +41,7 @@ class Application {
   static var audioPipelineIsRunningListener: EmitterKit.EventListener<Void>?
   private static var ignoreEvents = false
   private static var ignoreVolumeEvents = false
+  private static var mediaKeySequence = 0
 
   static var settings: Settings!
     
@@ -77,19 +77,17 @@ class Application {
     Networking.startMonitor()
     
     Driver.check {
-      Sources.getInputPermission {
-        if enabled {
-          setupAudio()
-        }
+      if enabled {
+        setupAudio()
+      }
 
-        setupListeners()
+      setupListeners()
 
-        self.setupUI {
-          if (User.isFirstLaunch) {
-            UI.show()
-          } else {
-            UI.close()
-          }
+      self.setupUI {
+        if (User.isFirstLaunch) {
+          UI.show()
+        } else {
+          UI.close()
         }
       }
     }
@@ -120,11 +118,29 @@ class Application {
     if (settingUpAudio) { return }
     settingUpAudio = true
     Console.log("Setting up Audio Engine")
-    Driver.show {
-      setupDeviceEvents()
-      startPassthrough {
-        settingUpAudio = false
+    setupDeviceEvents()
+
+    let current = AudioDevice.currentOutputDevice
+    if Outputs.isTargetDevice(current) {
+      Driver.show {
+        setupDriverDeviceEvents()
+        startPassthrough {
+          settingUpAudio = false
+        }
       }
+    } else if current.uid == Constants.DRIVER_DEVICE_UID,
+              let target = Outputs.allowedDevices.first(where: Outputs.isTargetDevice) {
+      selectedDevice = target
+      Driver.show {
+        setupDriverDeviceEvents()
+        startPassthrough {
+          settingUpAudio = false
+        }
+      }
+    } else {
+      selectedDevice = current
+      settingUpAudio = false
+      Driver.hidden = true
     }
   }
   
@@ -132,17 +148,18 @@ class Application {
   
   static func setupDeviceEvents () {
     AudioDeviceEvents.on(.outputChanged) { device in
-      if device.id == Driver.device!.id { return }
+      if device.uid == Constants.DRIVER_DEVICE_UID { return }
 
-      if Outputs.isDeviceAllowed(device) {
+      if Outputs.isTargetDevice(device) {
         if ignoreEvents {
-          dataBus.send(to: "/outputs/selected", data: JSON([ "id": device.id ]))
+          dataBus?.send(to: "/outputs/selected", data: JSON([ "id": device.id ]))
           return
         }
-        Console.log("outputChanged: ", device, " starting PlayThrough")
-        startPassthrough()
-      } else {
-        // TODO: Tell the user eqMac doesn't support this device
+        Console.log("Target output selected: ", device, " starting PlayThrough")
+        activateTarget(device)
+      } else if Outputs.isDeviceAllowed(device), !ignoreEvents {
+        Console.log("Non-target output selected: ", device, " bypassing eqMac dB")
+        bypass(to: device)
       }
     }
     
@@ -162,13 +179,8 @@ class Application {
         let currentDeviceRemoved = list.removed.contains(where: { $0.id == selectedDevice?.id })
         
         if (currentDeviceRemoved) {
-          ignoreEvents = true
-          removeEngines()
-          try! AudioDeviceEvents.recreateEventEmitters([.isAliveChanged, .volumeChanged, .nominalSampleRateChanged])
-          self.setupDriverDeviceEvents()
-          Async.delay(500) {
-            selectOutput(device: getLastKnowDeviceFromStack())
-          }
+          let fallback = AudioDevice.builtInOutputDevice
+          bypass(to: fallback)
         }
       }
       
@@ -194,12 +206,12 @@ class Application {
       }
     }
     
-    setupDriverDeviceEvents()
   }
   
   static var ignoreNextDriverMuteEvent = false
   static func setupDriverDeviceEvents () {
-    AudioDeviceEvents.on(.volumeChanged, onDevice: Driver.device!) {
+    guard let driver = Driver.device else { return }
+    AudioDeviceEvents.on(.volumeChanged, onDevice: driver) {
       if ignoreEvents || ignoreVolumeEvents {
         return
       }
@@ -208,7 +220,7 @@ class Application {
         ignoreNextVolumeEvent = false
         return
       }
-      let driverScalar = Driver.device!.virtualMasterVolume(direction: .playback)!
+      let driverScalar = driver.virtualMasterVolume(direction: .playback)!
       let gain = selectedDevice?.outputVolumeSupported == false
         ? SoftwareVolumeStepper.modelGain(fromDriverScalar: driverScalar)
         : Double(driverScalar)
@@ -222,23 +234,56 @@ class Application {
 
     }
     
-    AudioDeviceEvents.on(.muteChanged, onDevice: Driver.device!) {
-      if ignoreEvents { return }
+    AudioDeviceEvents.on(.muteChanged, onDevice: driver) {
+      if ignoreEvents || ignoreVolumeEvents { return }
       if (ignoreNextDriverMuteEvent) {
         ignoreNextDriverMuteEvent = false
         return
       }
-      Application.dispatchAction(VolumeAction.setMuted(Driver.device!.mute))
+      Application.dispatchAction(VolumeAction.setMuted(driver.mute))
     }
   }
   
   static func selectOutput (device: AudioDevice) {
+    if Outputs.isTargetDevice(device) {
+      activateTarget(device)
+      return
+    }
+    bypass(to: device)
+  }
+
+  private static func activateTarget(_ device: AudioDevice) {
+    guard enabled else {
+      AudioDevice.currentOutputDevice = device
+      AudioDevice.currentSystemDevice = device
+      return
+    }
     ignoreEvents = true
     stopRemoveEngines {
-      Async.delay(500) {
+      selectedDevice = device
+      AudioDevice.currentOutputDevice = device
+      AudioDevice.currentSystemDevice = device
+      Driver.show {
+        setupDriverDeviceEvents()
         ignoreEvents = false
-        AudioDevice.currentOutputDevice = device
+        startPassthrough()
       }
+    }
+  }
+
+  private static func bypass(to device: AudioDevice) {
+    guard device.uid != Constants.DRIVER_DEVICE_UID else { return }
+    ignoreEvents = true
+    stopRemoveEngines {
+      selectedDevice = device
+      AudioDevice.currentOutputDevice = device
+      AudioDevice.currentSystemDevice = device
+      if Driver.device != nil {
+        Driver.name = ""
+        Driver.hidden = true
+      }
+      ignoreEvents = false
+      dataBus?.send(to: "/outputs/selected", data: JSON([ "id": device.id ]))
     }
   }
 
@@ -253,10 +298,18 @@ class Application {
     selectedDevice = AudioDevice.currentOutputDevice
 
     if selectedDevice!.id == Driver.device!.id || !Outputs.isDeviceAllowed(selectedDevice!) {
-      selectedDevice = getLastKnowDeviceFromStack()
+      selectedDevice = Outputs.allowedDevices.first(where: Outputs.isTargetDevice)
     }
 
-    lastKnownDeviceStack.append(selectedDevice!)
+    guard let target = selectedDevice, Outputs.isTargetDevice(target) else {
+      startingPassthrough = false
+      settingUpAudio = false
+      completion?()
+      return
+    }
+
+    selectedDevice = target
+    lastKnownDeviceStack.append(target)
 
     ignoreEvents = true
     var volume: Double = Application.store.state.volume.gain
@@ -428,12 +481,28 @@ class Application {
         boostEnabled: state.boostEnabled
       )
 
+      // Core Audio may also issue a scalar write for the same hardware key.
+      // Ignore that write briefly, then reassert the exact dB target. Slider
+      // writes outside this small media-key transaction remain fully active.
+      mediaKeySequence += 1
+      let sequence = mediaKeySequence
+      ignoreVolumeEvents = true
+
       // A normal step changes one state field. The legacy gain-zero recovery
       // changes gain first; Volume.gain then performs the matching unmute.
       if abs(result.gain - state.gain) > 0.000_000_001 {
         store.dispatch(VolumeAction.setGain(result.gain, false))
       } else if result.muted != state.muted {
         store.dispatch(VolumeAction.setMuted(result.muted))
+      }
+      Async.delay(100) {
+        guard sequence == mediaKeySequence else { return }
+        store.dispatch(VolumeAction.setGain(result.gain, false))
+        store.dispatch(VolumeAction.setMuted(result.muted))
+        Async.delay(40) {
+          guard sequence == mediaKeySequence else { return }
+          ignoreVolumeEvents = false
+        }
       }
       return
     }
@@ -464,7 +533,19 @@ class Application {
   }
   
   static func muteButtonPressed () {
-    store.dispatch(VolumeAction.setMuted(!store.state.volume.muted))
+    mediaKeySequence += 1
+    let sequence = mediaKeySequence
+    ignoreVolumeEvents = true
+    let targetMuted = !store.state.volume.muted
+    store.dispatch(VolumeAction.setMuted(targetMuted))
+    Async.delay(100) {
+      guard sequence == mediaKeySequence else { return }
+      store.dispatch(VolumeAction.setMuted(targetMuted))
+      Async.delay(40) {
+        guard sequence == mediaKeySequence else { return }
+        ignoreVolumeEvents = false
+      }
+    }
   }
   
   private static func switchBackToLastKnownDevice () {

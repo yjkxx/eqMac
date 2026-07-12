@@ -28,6 +28,8 @@ struct Constants {
   static let FAQ_URL = URL(string: "https://\(Constants.DOMAIN)/faq")!
   static let BUG_REPORT_URL = URL(string: "https://\(Constants.DOMAIN)/bug-report")!
   static let DRIVER_DEVICE_UID = "EQMacDBDevice"
+  static let TARGET_OUTPUT_DEVICE_UID = "AppleUSBAudioEngine:YAMAHA:Yamaha A-U670/A-U671:2113000:1"
+  static let TARGET_OUTPUT_DEVICE_NAME = "Yamaha A-U670/A-U671 Output"
   static let DRIVER_MINIMUM_VERSION = Version(tolerant: "1.3")!
   static let LEGACY_DRIVER_UIDS = [
     "EQMAC2.1_DRIVER_ENGINE",
