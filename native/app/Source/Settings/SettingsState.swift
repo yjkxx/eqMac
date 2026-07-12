@@ -15,8 +15,8 @@ import BetterCodable
 struct SettingsState: State {
   var iconMode: IconMode = .both
   @DefaultFalse var doCollectCrashReports = false
-  @DefaultTrue var doAutoCheckUpdates = true
-  @DefaultTrue var doOTAUpdates = true
+  @DefaultFalse var doAutoCheckUpdates = false
+  @DefaultFalse var doOTAUpdates = false
   @DefaultFalse var doBetaUpdates = false
 }
 
@@ -36,9 +36,9 @@ func SettingsStateReducer(action: Action, state: SettingsState?) -> SettingsStat
   case .setDoCollectCrashReports(let doCollect)?:
     state.doCollectCrashReports = doCollect
   case .setDoAutoCheckUpdates(let doAutoCheckUpdates)?:
-    state.doAutoCheckUpdates = doAutoCheckUpdates
+    state.doAutoCheckUpdates = Constants.UPDATES_ENABLED && doAutoCheckUpdates
   case .setDoOTAUpdates(let doOTAUpdates)?:
-    state.doOTAUpdates = doOTAUpdates
+    state.doOTAUpdates = Constants.UPDATES_ENABLED && doOTAUpdates
   case .setDoBetaUpdates(let doBetaUpdates)?:
     state.doBetaUpdates = doBetaUpdates
   case .none:

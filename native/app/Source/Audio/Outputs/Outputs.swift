@@ -9,6 +9,7 @@
 import Foundation
 import AVFoundation
 import AMCoreAudio
+import CoreAudio
 
 class Outputs {
   static var current: AudioDeviceID? {

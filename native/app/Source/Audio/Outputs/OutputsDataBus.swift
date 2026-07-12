@@ -9,6 +9,7 @@
 import Foundation
 import SwiftyJSON
 import AMCoreAudio
+import CoreAudio
 import EmitterKit
 
 class OutputsDataBus: DataBus {

@@ -424,7 +424,7 @@ class UI: StoreSubscriber {
       startUILoad(url)
     }
 
-    if (Application.store.state.settings.doOTAUpdates) {
+    if (Constants.UPDATES_ENABLED && Application.store.state.settings.doOTAUpdates) {
       remoteIsReachable() { reachable in
         if reachable {
           loadRemote()

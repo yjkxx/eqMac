@@ -2,6 +2,7 @@ import Foundation
 import AMCoreAudio
 import SwiftyUserDefaults
 import CoreFoundation
+import CoreAudio
 import EmitterKit
 
 extension AudioDevice {
@@ -31,11 +32,25 @@ extension AudioDevice {
   }
   
   var outputVolumeSupported: Bool {
-    return self.virtualMasterVolume(direction: .playback) != nil
+    var address = AudioObjectPropertyAddress(
+      mSelector: kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
+      mScope: kAudioObjectPropertyScopeOutput,
+      mElement: kAudioObjectPropertyElementMaster
+    )
+    var settable = DarwinBoolean(false)
+    return AudioObjectIsPropertySettable(id, &address, &settable) == noErr
+      && settable.boolValue
   }
   
   var outputBalanceSupported: Bool {
-    return self.virtualMasterBalance(direction: .playback) != nil
+    var address = AudioObjectPropertyAddress(
+      mSelector: kAudioHardwareServiceDeviceProperty_VirtualMainBalance,
+      mScope: kAudioObjectPropertyScopeOutput,
+      mElement: kAudioObjectPropertyElementMaster
+    )
+    var settable = DarwinBoolean(false)
+    return AudioObjectIsPropertySettable(id, &address, &settable) == noErr
+      && settable.boolValue
   }
   
   var isActiveSettable: Bool {
@@ -249,4 +264,3 @@ extension AudioDevice {
       return AudioObjectGetPropertyDataSize(objectID, &theAddress, 0, nil, &size)
   }
 }
-

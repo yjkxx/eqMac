@@ -67,7 +67,9 @@ class EQMClients {
   }
 
   static var isAppClientPresent: Bool {
-    return Array(clients.values).contains { $0.bundleId == APP_BUNDLE_ID }
+    mutex.lock()
+    let present = clients.values.contains { $0.bundleId == APP_BUNDLE_ID }
+    mutex.unlock()
+    return present
   }
 }
-

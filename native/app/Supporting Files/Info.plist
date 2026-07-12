@@ -14,6 +14,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>eqMac dB</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -38,18 +40,14 @@
 		<dict/>
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>eqMac uses AppleEvents to automate some aspects of the setup process</string>
+	<string>eqMac dB uses AppleEvents to automate some aspects of the setup process</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2017 Roman Kisil. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone permission is used to capture Input Device and/or System Audio streams.</string>
+	<string>eqMac dB uses microphone permission to capture and process system audio.</string>
 	<key>NSPrincipalClass</key>
 	<string>EventInterceptor</string>
-	<key>SUFeedURL</key>
-	<string>https://update.eqmac.app/update.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>hpYxDspWiys38uAkwQl1oxaH4bICfYMofUXN18mMguM=</string>
 </dict>
 </plist>

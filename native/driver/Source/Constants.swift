@@ -26,11 +26,11 @@ let kBytesPerChannel = kBitsPerChannel / 8
 let kBytesPerFrame = kChannelCount * kBytesPerChannel
 let kDataSource_NumberItems: UInt32 = 1
 
-let kEQMDeviceDefaultName = "eqMac"
-let kDeviceManufacturer = "Bitgapp Ltd"
+let kEQMDeviceDefaultName = "eqMac dB"
+let kDeviceManufacturer = "eqMac dB local fork"
 
-let kDeviceUID = "EQMDevice"
-let kDeviceModelUID = "EQMDeviceModelUID"
+let kDeviceUID = "EQMacDBDevice"
+let kDeviceModelUID = "EQMacDBDeviceModelUID"
 
 let kDefaultSampleRate: Float64 = kEQMDeviceSupportedSampleRates[0]
 let kDefaultOutputVolume: Float32 = 1.0

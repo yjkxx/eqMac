@@ -10,14 +10,12 @@ import Foundation
 import Cocoa
 import AMCoreAudio
 import Dispatch
-import Sentry
 import EmitterKit
 import AVFoundation
 import SwiftyUserDefaults
 import SwiftyJSON
 import ServiceManagement
 import ReSwift
-import Sparkle
 import Shared
 
 enum VolumeChangeDirection: String {
@@ -56,8 +54,6 @@ class Application {
   static var dataBus: ApplicationDataBus!
   static let error = EmitterKit.Event<String>()
   
-  static var updater = SUUpdater(for: Bundle.main)!
-  
   static let store: Store = Store(
     reducer: ApplicationStateReducer,
     state: ApplicationState.load(),
@@ -77,18 +73,12 @@ class Application {
   static var equalizersTypeChangedListener: EventListener<EqualizerType>?
 
   static public func start () {
-    if (!Constants.DEBUG) {
-      setupCrashReporting()
-    }
-    
     self.settings = Settings()
 
     Networking.startMonitor()
     
     Driver.check {
       Sources.getInputPermission {
-        AudioDevice.register = true
-
         if enabled {
           setupAudio()
         }
@@ -126,20 +116,6 @@ class Application {
     }
   }
   
-  private static func setupCrashReporting () {
-    // Create a Sentry client and start crash handler
-    SentrySDK.start { options in
-      options.dsn = Constants.SENTRY_ENDPOINT
-      // Only send crash reports if user gave consent
-      options.beforeSend = { event in
-        if (store.state.settings.doCollectCrashReports) {
-          return event
-        }
-        return nil
-      }
-    }
-  }
-
   private static var settingUpAudio = false
   private static func setupAudio () {
     if (settingUpAudio) { return }
@@ -233,14 +209,15 @@ class Application {
         ignoreNextVolumeEvent = false
         return
       }
-      if (overrideNextVolumeEvent) {
-        overrideNextVolumeEvent = false
-        ignoreNextVolumeEvent = true
-        Driver.device!.setVirtualMasterVolume(1, direction: .playback)
+      let driverScalar = Driver.device!.virtualMasterVolume(direction: .playback)!
+      let gain = selectedDevice?.outputVolumeSupported == false
+        ? SoftwareVolumeStepper.modelGain(fromDriverScalar: driverScalar)
+        : Double(driverScalar)
+      let currentGain = Application.store.state.volume.gain
+      if currentGain > 1 && driverScalar >= 1 {
         return
       }
-      let gain = Double(Driver.device!.virtualMasterVolume(direction: .playback)!)
-      if (gain <= 1 && gain != Application.store.state.volume.gain) {
+      if gain <= 1 && abs(gain - currentGain) > 0.000_001 {
         Application.dispatchAction(VolumeAction.setGain(gain, false))
       }
 
@@ -276,7 +253,7 @@ class Application {
     startingPassthrough = true
     selectedDevice = AudioDevice.currentOutputDevice
 
-    if (selectedDevice!.id == Driver.device!.id) {
+    if selectedDevice!.id == Driver.device!.id || !Outputs.isDeviceAllowed(selectedDevice!) {
       selectedDevice = getLastKnowDeviceFromStack()
     }
 
@@ -305,9 +282,12 @@ class Application {
     Application.dispatchAction(VolumeAction.setGain(volume, false))
     Application.dispatchAction(VolumeAction.setMuted(muted))
     
-    Driver.device!.setVirtualMasterVolume(volume > 1 ? 1 : Float32(volume), direction: .playback)
+    let driverVolume = selectedDevice!.outputVolumeSupported
+      ? Float32(min(volume, 1))
+      : SoftwareVolumeStepper.driverScalar(fromModelGain: volume)
+    Driver.device!.setVirtualMasterVolume(driverVolume, direction: .playback)
     Driver.latency = selectedDevice!.latency(direction: .playback) ?? 0 // Set driver latency to mimic device
-    Driver.name = "\(selectedDevice!.sourceName ?? selectedDevice!.name) (eqMac)"
+    Driver.name = "\(selectedDevice!.sourceName ?? selectedDevice!.name) (eqMac dB)"
     self.matchDriverSampleRateToOutput()
     
     Console.log("Driver new Latency: \(Driver.latency)")
@@ -327,24 +307,34 @@ class Application {
   }
 
   private static func getLastKnowDeviceFromStack () -> AudioDevice {
-    var device: AudioDevice?
-    if (lastKnownDeviceStack.count > 0) {
-      device = lastKnownDeviceStack.removeLast()
-    } else {
-      device = selectedDevice ?? AudioDevice.builtInOutputDevice
-    }
-    guard device != nil, device!.id != Driver.device!.id else {
-      selectedDevice = nil
-      return getLastKnowDeviceFromStack()
-    }
-
-    Console.log("Last known device: \(device!.id) - \(device!.name)")
-    guard let newDevice = Outputs.allowedDevices.first(where: { $0.id == device!.id || $0.name == device!.name }) else {
+    while !lastKnownDeviceStack.isEmpty {
+      let candidate = lastKnownDeviceStack.removeLast()
+      if let available = Outputs.allowedDevices.first(where: {
+        $0.id == candidate.id || $0.name == candidate.name
+      }) {
+        Console.log("Last known device: \(available.id) - \(available.name)")
+        return available
+      }
       Console.log("Last known device is not currently available, trying next")
-      return getLastKnowDeviceFromStack()
     }
 
-    return newDevice
+    if let current = selectedDevice,
+       let available = Outputs.allowedDevices.first(where: {
+         $0.id == current.id || $0.name == current.name
+       }) {
+      return available
+    }
+
+    let builtIn = AudioDevice.builtInOutputDevice
+    if let available = Outputs.allowedDevices.first(where: {
+         $0.id == builtIn.id || $0.name == builtIn.name
+       }) {
+      return available
+    }
+
+    // setupAudio already checks for an empty output list, so this is only a
+    // final defensive fallback for a device disappearing mid-switch.
+    return Outputs.allowedDevices.first!
   }
 
   private static func matchDriverSampleRateToOutput () {
@@ -388,6 +378,9 @@ class Application {
       if ignoreEvents || ignoreVolumeEvents {
         return
       }
+      guard selectedDevice!.outputVolumeSupported else {
+        return
+      }
       if ignoreNextVolumeEvent {
         ignoreNextVolumeEvent = false
         return
@@ -419,54 +412,60 @@ class Application {
     dataBus = ApplicationDataBus(bridge: UI.bridge)
   }
   
-  static var overrideNextVolumeEvent = false
   static func volumeChangeButtonPressed (direction: VolumeChangeDirection, quarterStep: Bool = false) {
     if ignoreEvents || engine == nil || output == nil {
       return
     }
-    if direction == .UP {
-      ignoreNextDriverMuteEvent = true
-      Async.delay(100) {
-        ignoreNextDriverMuteEvent = false
+    let state = store.state.volume
+
+    if selectedDevice?.outputVolumeSupported == false {
+      let result = SoftwareVolumeStepper.step(
+        gain: state.gain,
+        muted: state.muted,
+        direction: direction == .UP ? .up : .down,
+        stepDecibels: quarterStep
+          ? SoftwareVolumeStepper.fineStepDecibels
+          : SoftwareVolumeStepper.normalStepDecibels,
+        boostEnabled: state.boostEnabled
+      )
+
+      // A normal step changes one state field. The legacy gain-zero recovery
+      // changes gain first; Volume.gain then performs the matching unmute.
+      if abs(result.gain - state.gain) > 0.000_000_001 {
+        store.dispatch(VolumeAction.setGain(result.gain, false))
+      } else if result.muted != state.muted {
+        store.dispatch(VolumeAction.setMuted(result.muted))
       }
+      return
     }
-    let gain = output!.volume.gain
-    if (gain >= 1) {
-      if direction == .DOWN {
-        overrideNextVolumeEvent = true
-      }
-      
-      let steps = quarterStep ? Constants.QUARTER_VOLUME_STEPS : Constants.FULL_VOLUME_STEPS
-      
-      var stepIndex: Int
-      
+
+    // Hardware-volume devices expose a device-defined scalar rather than a
+    // known amplitude. Preserve eqMac's original scalar stepping for those.
+    if state.muted {
       if direction == .UP {
-        stepIndex = steps.index(where: { $0 > gain }) ?? steps.count - 1
-      } else {
-        stepIndex = steps.index(where: { $0 >= gain }) ?? 0
-        stepIndex -= 1
-        if (stepIndex < 0) {
-          stepIndex = 0
-        }
+        store.dispatch(VolumeAction.setMuted(false))
       }
-      
-      var newGain = steps[stepIndex]
-      
-      if (newGain <= 1) {
-        Async.delay(100) {
-          Driver.device!.setVirtualMasterVolume(Float(newGain), direction: .playback)
-        }
-      } else {
-        if (!Application.store.state.volume.boostEnabled) {
-          newGain = 1
-        }
-      }
-      Application.dispatchAction(VolumeAction.setGain(newGain, false))
+      return
     }
+
+    let steps = quarterStep ? Constants.QUARTER_VOLUME_STEPS : Constants.FULL_VOLUME_STEPS
+    var stepIndex: Int
+    if direction == .UP {
+      stepIndex = steps.firstIndex(where: { $0 > state.gain }) ?? steps.count - 1
+    } else {
+      stepIndex = (steps.firstIndex(where: { $0 >= state.gain }) ?? 0) - 1
+      stepIndex = max(stepIndex, 0)
+    }
+
+    var newGain = steps[stepIndex]
+    if newGain > 1 && !state.boostEnabled {
+      newGain = 1
+    }
+    store.dispatch(VolumeAction.setGain(newGain, false))
   }
   
   static func muteButtonPressed () {
-    ignoreNextDriverMuteEvent = false
+    store.dispatch(VolumeAction.setMuted(!store.state.volume.muted))
   }
   
   private static func switchBackToLastKnownDevice () {
@@ -619,7 +618,7 @@ class Application {
   }
   
   static func checkForUpdates () {
-    updater.checkForUpdates(nil)
+    // This local fork deliberately has no updater.
   }
   
   static func uninstall () {
@@ -680,4 +679,3 @@ class Application {
     }
   }
 }
-

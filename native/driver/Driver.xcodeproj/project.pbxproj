@@ -25,7 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1CB8B3641BBBB78D000E2DD1 /* eqMac.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = eqMac.driver; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CB8B3641BBBB78D000E2DD1 /* eqMacDB.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = eqMacDB.driver; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CB8B3681BBBB78D000E2DD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		781FD6D026DADCE7006CAAEA /* EQMClients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQMClients.swift; sourceTree = "<group>"; };
 		7838E35726C898D60039D466 /* EQMStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQMStream.swift; sourceTree = "<group>"; };
@@ -74,7 +74,7 @@
 		1CB8B3651BBBB78D000E2DD1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1CB8B3641BBBB78D000E2DD1 /* eqMac.driver */,
+				1CB8B3641BBBB78D000E2DD1 /* eqMacDB.driver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,7 +143,6 @@
 				1CB8B3601BBBB78D000E2DD1 /* Sources */,
 				1CB8B3611BBBB78D000E2DD1 /* Frameworks */,
 				1CB8B3621BBBB78D000E2DD1 /* Resources */,
-				7823A93C26D597F6004BABC6 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -155,7 +154,7 @@
 				78F28AD7274D2A940005474D /* Shared */,
 			);
 			productName = EQMDriver;
-			productReference = 1CB8B3641BBBB78D000E2DD1 /* eqMac.driver */;
+			productReference = 1CB8B3641BBBB78D000E2DD1 /* eqMacDB.driver */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -208,25 +207,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7823A93C26D597F6004BABC6 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 12;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "export SUDO_ASKPASS=~/askpass.sh\n# Uninstall any new driver leftovers\nsudo -A rm -rf /Library/Audio/Plug-Ins/HAL/eqMac.driver/\n# Install the new driver\nsudo -A cp -f -r \"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\" /Library/Audio/Plug-Ins/HAL/\n# Restart CoreAudio\nsudo -A launchctl kickstart -k system/com.apple.audio.coreaudiod\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -310,7 +290,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				ONLY_ACTIVE_ARCH = YES;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
@@ -377,7 +357,7 @@
 				GCC_WARN_UNUSED_LABEL = YES;
 				GCC_WARN_UNUSED_PARAMETER = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
 				WARNING_CFLAGS = "-Wpartial-availability";
@@ -432,16 +412,17 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
-					"/Library/Audio/Plug-Ins/HAL/eqMac.driver/Contents/Frameworks",
+					"/Library/Audio/Plug-Ins/HAL/eqMacDB.driver/Contents/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.3.1;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CODE_SIGN_FLAGS = "";
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.bitgapp.eqmac.driver;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.eqmacdb.driver;
+				PRODUCT_MODULE_NAME = eqMac;
+				PRODUCT_NAME = eqMacDB;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SKIP_INSTALL = NO;
@@ -505,14 +486,15 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
-					"/Library/Audio/Plug-Ins/HAL/eqMac.driver/Contents/Frameworks",
+					"/Library/Audio/Plug-Ins/HAL/eqMacDB.driver/Contents/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MARKETING_VERSION = 1.3.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
-				PRODUCT_BUNDLE_IDENTIFIER = com.bitgapp.eqmac.driver;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.local.eqmacdb.driver;
+				PRODUCT_MODULE_NAME = eqMac;
+				PRODUCT_NAME = eqMacDB;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SKIP_INSTALL = NO;

@@ -1,0 +1,67 @@
+name: Build eqMac dB
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - constant-db-volume
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify arm64 app/driver
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.3
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+          pod --version
+
+      - name: Test constant-dB stepping
+        run: |
+          swift test \
+            --package-path native/shared \
+            --scratch-path "$RUNNER_TEMP/eqmac-shared-tests"
+          swift run \
+            --package-path native/shared \
+            --scratch-path "$RUNNER_TEMP/eqmac-stepper-check" \
+            StepperCheck
+
+      - name: Build app and driver
+        env:
+          XCODE_APP: /Applications/Xcode_26.3.app
+        run: ./scripts/build-local.sh
+
+      - name: Verify bundle identities
+        run: |
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' 'build/products/eqMac dB.app/Contents/Info.plist')" = 'com.local.eqmacdb'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' 'build/products/eqMacDB.driver/Contents/Info.plist')" = 'com.local.eqmacdb.driver'
+
+      - name: Package build
+        run: |
+          mkdir -p build/artifact
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/products \
+            build/artifact/eqMac-dB-debug-arm64.zip
+          shasum -a 256 build/artifact/eqMac-dB-debug-arm64.zip \
+            > build/artifact/eqMac-dB-debug-arm64.zip.sha256
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: eqMac-dB-debug-arm64
+          path: build/artifact/*
+          if-no-files-found: error
+          retention-days: 14

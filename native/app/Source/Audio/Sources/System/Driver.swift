@@ -7,7 +7,9 @@
 //
 
 import Foundation
+import AppKit
 import AMCoreAudio
+import CoreAudio
 import CoreFoundation
 import Version
 import EmitterKit
@@ -18,20 +20,18 @@ class Driver {
     if !Driver.isInstalled || !Driver.isCompatible {
       let isIncompatable = Driver.isInstalled && !Driver.isCompatible
       let message = isIncompatable ?
-        "For unknown reason the version of Audio Driver needed for eqMac to work currently is not compatable. Try restarting your computer and run eqMac again. In that doesn't work, try re-installing eqMac from our website."
-        : "For unknown reason the Audio Driver needed for eqMac to work currently is not installed. Try restarting your computer and run eqMac again. In that doesn't work, try re-installing eqMac from our website."
-      let title = isIncompatable ? "The eqMac Audio Driver is Incompatable" : "The eqMac Audio Driver is not installed"
+        "The installed eqMac dB audio driver is incompatible with this app. Reinstall eqMacDB.driver from this fork's build output."
+        : "The separate eqMac dB audio driver is not installed. Install eqMacDB.driver from this fork's build output before opening the app."
+      let title = isIncompatable ? "eqMac dB driver is incompatible" : "eqMac dB driver is not installed"
       Alert.withButtons(
         title: title,
         message: message,
-        buttons: ["Restart Mac", "Re-install eqMac", "Quit"]
+        buttons: ["Restart Mac", "Quit"]
       ) { buttonPressed in
         switch NSApplication.ModalResponse(buttonPressed) {
           case .alertFirstButtonReturn:
             Application.restartMac()
             break
-          case .alertSecondButtonReturn:
-            NSWorkspace.shared.open(Constants.WEBSITE_URL)
           default: break
         }
         return Application.quit()
@@ -73,7 +73,7 @@ class Driver {
 
   private static func failedToShowPrompt () {
     Alert.confirm(
-    title: "Driver failed to activate", message: "Unfortunately the audio driver has failed to active. You can restart eqMac and try again or quit.", okText: "Try again", cancelText: "Quit") { restart in
+    title: "Driver failed to activate", message: "The eqMac dB audio driver failed to activate. You can restart eqMac dB and try again or quit.", okText: "Try again", cancelText: "Quit") { restart in
       if restart {
         return Application.restart()
       } else {
@@ -169,4 +169,3 @@ class Driver {
   }
   
 }
-

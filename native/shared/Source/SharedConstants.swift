@@ -1,8 +1,8 @@
 import Foundation
 import CoreAudio.AudioServerPlugIn
 
-public let APP_BUNDLE_ID = "com.bitgapp.eqmac"
-public let DRIVER_BUNDLE_ID = "com.bitgapp.eqmac.driver"
+public let APP_BUNDLE_ID = "com.local.eqmacdb"
+public let DRIVER_BUNDLE_ID = "com.local.eqmacdb.driver"
 
 public struct EQMDeviceCustomProperties: Loopable {
   public let version = AudioObjectPropertySelector.fromString("vrsn")
@@ -55,5 +55,7 @@ public let kEQMDeviceSupportedSampleRates: [Float64] = [
   192_000
 ]
 
-public let kMinVolumeDB: Float32 = -96
+// Scalar zero is reserved for silence. The first audible 1 dB step is therefore
+// -63 dB on this 64 dB control range.
+public let kMinVolumeDB: Float32 = -64
 public let kMaxVolumeDB: Float32 = 0

@@ -11,6 +11,7 @@ import ReSwift
 import EmitterKit
 import AMCoreAudio
 import AVFoundation
+import Shared
 
 class Volume: StoreSubscriber {
   var state: VolumeState {
@@ -47,7 +48,10 @@ class Volume: StoreSubscriber {
           mixer.pan = Float(balance)
         }
 
-        Driver.device!.setVirtualMasterVolume(Float32(gain), direction: .playback)
+        let driverVolume = volumeSupported
+          ? Float32(gain)
+          : SoftwareVolumeStepper.driverScalar(fromModelGain: gain)
+        Driver.device!.setVirtualMasterVolume(driverVolume, direction: .playback)
       } else { // gain > 1
         if (!boostEnabled) {
           Application.dispatchAction(VolumeAction.setGain(1, false))
@@ -125,15 +129,30 @@ class Volume: StoreSubscriber {
   
   private let changeGainThread = DispatchQueue(label: "change-volume", qos: .userInteractive)
   private var latestChangeGainTask: DispatchWorkItem?
-  private func performOnChangeGainThread (_ code: @escaping () -> Void) {
+  private var latestChangeBalanceTask: DispatchWorkItem?
+  private var latestChangeMutedTask: DispatchWorkItem?
+
+  private func performGainChange (_ code: @escaping () -> Void) {
     latestChangeGainTask?.cancel()
     latestChangeGainTask = DispatchWorkItem(block: code)
     changeGainThread.async(execute: latestChangeGainTask!)
   }
 
+  private func performBalanceChange (_ code: @escaping () -> Void) {
+    latestChangeBalanceTask?.cancel()
+    latestChangeBalanceTask = DispatchWorkItem(block: code)
+    changeGainThread.async(execute: latestChangeBalanceTask!)
+  }
+
+  private func performMutedChange (_ code: @escaping () -> Void) {
+    latestChangeMutedTask?.cancel()
+    latestChangeMutedTask = DispatchWorkItem(block: code)
+    changeGainThread.async(execute: latestChangeMutedTask!)
+  }
+
   func newState(state: VolumeState) {
     if (state.balance != balance) {
-      performOnChangeGainThread { [weak self] in
+      performBalanceChange { [weak self] in
         guard self != nil else { return }
         if (state.transition) {
           Transition.perform(from: self!.balance, to: state.balance) { balance in
@@ -146,7 +165,7 @@ class Volume: StoreSubscriber {
     }
     
     if (state.gain != gain) {
-      performOnChangeGainThread { [weak self] in
+      performGainChange { [weak self] in
         guard self != nil else { return }
         if (state.transition) {
           Transition.perform(from: self!.gain, to: state.gain) { [weak self] gain in
@@ -159,7 +178,7 @@ class Volume: StoreSubscriber {
     }
     
     if (state.muted != muted) {
-      performOnChangeGainThread { [weak self] in
+      performMutedChange { [weak self] in
         guard self != nil else { return }
         self!.muted = state.muted
       }

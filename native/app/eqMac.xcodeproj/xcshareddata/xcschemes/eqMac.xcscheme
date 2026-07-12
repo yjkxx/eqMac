@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E086AFFB1FCCB8E700CF9F0D"
-               BuildableName = "eqMac.app"
+               BuildableName = "eqMac dB.app"
                BlueprintName = "eqMac"
                ReferencedContainer = "container:eqMac.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E086AFFB1FCCB8E700CF9F0D"
-            BuildableName = "eqMac.app"
+            BuildableName = "eqMac dB.app"
             BlueprintName = "eqMac"
             ReferencedContainer = "container:eqMac.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E086AFFB1FCCB8E700CF9F0D"
-            BuildableName = "eqMac.app"
+            BuildableName = "eqMac dB.app"
             BlueprintName = "eqMac"
             ReferencedContainer = "container:eqMac.xcodeproj">
          </BuildableReference>

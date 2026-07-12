@@ -8,6 +8,7 @@
 
 import Cocoa
 import EmitterKit
+import Shared
 
 enum StatusItemIconType: String, Codable {
   case classic = "classic"
@@ -44,13 +45,14 @@ class StatusItem {
   ]
   private static let classicIconImage = NSImage(named: "statusBarIcon")!.resize(with: NSMakeSize(20, 20))
   static func getNativeImageFor (volume: Double, muted: Bool) -> NSImage {
-    if muted || volume <= 0.01 {
+    if muted || volume <= 0 {
       return speakerIconImages[0]
     }
-    if volume <= 0.33 {
+    let decibels = SoftwareVolumeStepper.decibels(fromModelGain: volume)
+    if decibels <= -42 {
       return speakerIconImages[1]
     }
-    if volume <= 0.66 {
+    if decibels <= -21 {
       return speakerIconImages[2]
     }
 
@@ -115,7 +117,7 @@ class StatusItem {
     
     let quitMenuItem = NSMenuItem()
     quitMenuItem.target = self
-    quitMenuItem.title = "Quit eqMac"
+    quitMenuItem.title = "Quit eqMac dB"
     quitMenuItem.action = #selector(StatusItem.quit(sender:))
     quitMenuItem.isEnabled = true
     rightClickMenu.addItem(quitMenuItem)
@@ -152,4 +154,3 @@ class StatusItem {
     NotificationCenter.default.removeObserver(self)
   }
 }
-

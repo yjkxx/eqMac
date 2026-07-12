@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Shared",
     platforms: [
-      .macOS(.v10_10)
+      .macOS(.v11)
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -15,6 +15,10 @@ let package = Package(
             targets: [
               "Shared"
             ]
+        ),
+        .executable(
+            name: "StepperCheck",
+            targets: ["StepperCheck"]
         ),
     ],
     dependencies: [
@@ -33,6 +37,16 @@ let package = Package(
               .product(name: "Atomics", package: "swift-atomics")
             ],
             path: "Source"
+        ),
+        .testTarget(
+            name: "SharedTests",
+            dependencies: ["Shared"],
+            path: "Tests/SharedTests"
+        ),
+        .executableTarget(
+            name: "StepperCheck",
+            dependencies: ["Shared"],
+            path: "Tests/StepperCheck"
         )
     ],
     swiftLanguageVersions: [
