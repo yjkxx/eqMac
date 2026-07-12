@@ -22,14 +22,20 @@ class EventInterceptor: NSApplication {
       if (keyDown) {
         switch Int32(keyCode) {
         case NX_KEYTYPE_SOUND_UP:
-          Application.volumeChangeButtonPressed(direction: .UP, quarterStep: shiftPressed(event: event) && optionPressed(event: event))
-          return
+          if Application.engine != nil && Application.output != nil {
+            Application.volumeChangeButtonPressed(direction: .UP, quarterStep: shiftPressed(event: event) && optionPressed(event: event))
+            return
+          }
         case NX_KEYTYPE_SOUND_DOWN:
-          Application.volumeChangeButtonPressed(direction: .DOWN, quarterStep: shiftPressed(event: event) && optionPressed(event: event))
-          return
+          if Application.engine != nil && Application.output != nil {
+            Application.volumeChangeButtonPressed(direction: .DOWN, quarterStep: shiftPressed(event: event) && optionPressed(event: event))
+            return
+          }
         case NX_KEYTYPE_MUTE:
-          Application.muteButtonPressed()
-          return
+          if Application.engine != nil && Application.output != nil {
+            Application.muteButtonPressed()
+            return
+          }
         default: break
         }
       }
@@ -61,4 +67,3 @@ class EventInterceptor: NSApplication {
   }
   
 }
-
