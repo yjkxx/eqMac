@@ -35,6 +35,8 @@ installation:
 Sparkle, Sentry, automatic app updates, and remote UI updates are removed or
 disabled. The bundled offline UI is always used. The unsafe upstream Xcode
 scripts that deleted `/Library/Audio/Plug-Ins/HAL/eqMac.driver` were removed.
+The legacy x86_64 LaunchAtLogin helper is also removed; launch-at-login is not
+available in this arm64 build.
 
 ## Build
 

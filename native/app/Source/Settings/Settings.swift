@@ -8,8 +8,6 @@
 
 import Foundation
 import Cocoa
-import ServiceManagement
-import LaunchAtLogin
 import SwiftyUserDefaults
 import ReSwift
 
@@ -83,19 +81,19 @@ class Settings: StoreSubscriber {
 
   static var launchOnStartup: Bool {
     get {
-      return LaunchAtLogin.isEnabled
+      return false
     }
     set {
-      LaunchAtLogin.isEnabled = newValue
+      // The legacy x86_64 helper is intentionally omitted from this arm64 fork.
     }
   }
 
   var launchOnStartup: Bool {
     get {
-      return LaunchAtLogin.isEnabled
+      return false
     }
     set {
-      LaunchAtLogin.isEnabled = newValue
+      // The legacy x86_64 helper is intentionally omitted from this arm64 fork.
     }
   }
   

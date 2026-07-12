@@ -21,7 +21,6 @@
 		789F83CF250E20A8004F871D /* restart_coreaudio.sh in Resources */ = {isa = PBXBuildFile; fileRef = 789F83CE250E20A8004F871D /* restart_coreaudio.sh */; };
 		78AA48F4270362AA007CDE89 /* BetterCodable in Frameworks */ = {isa = PBXBuildFile; productRef = 78AA48F3270362AA007CDE89 /* BetterCodable */; };
 		78AA48F727038093007CDE89 /* BetterCodableExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AA48F627038093007CDE89 /* BetterCodableExtensions.swift */; };
-		78D8C3322569B2910084739C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 78D8C3312569B2910084739C /* LaunchAtLogin */; };
 		78D8C3332569B3000084739C /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E0370EB0200D68AB00DF4DBF /* AudioToolbox.framework */; };
 		78D8C3472569B7980084739C /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78D8C3462569B7980084739C /* AudioUnit.framework */; };
 		78E562F326139ACF00BF3F19 /* Data+extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78E562F226139ACF00BF3F19 /* Data+extensions.swift */; };
@@ -208,7 +207,6 @@
 				E02ACA982459EF3B00754204 /* Pods_eqMac.framework in Frameworks */,
 				7893D5752674F6B100F3815B /* Version in Frameworks */,
 				78242E96261A8AEE00058ADE /* Connectivity in Frameworks */,
-				78D8C3322569B2910084739C /* LaunchAtLogin in Frameworks */,
 				E0453056245A03E800CDB1BF /* Foundation.framework in Frameworks */,
 				78D8C3332569B3000084739C /* AudioToolbox.framework in Frameworks */,
 				78AA48F4270362AA007CDE89 /* BetterCodable in Frameworks */,
@@ -554,9 +552,7 @@
 				E086AFF81FCCB8E700CF9F0D /* Sources */,
 				E086AFFA1FCCB8E700CF9F0D /* Resources */,
 				E086AFF91FCCB8E700CF9F0D /* Frameworks */,
-				E0F4FD9A22888AC300BEB0A6 /* Run Script - LaunchAtLogin copy-helper */,
 				896A6D438DAEE15F87C748E4 /* [CP] Embed Pods Frameworks */,
-				E0A48D6323C61CC200700C39 /* Run Script - Hardruntime + Sign LaunchAtLogin */,
 			);
 			buildRules = (
 			);
@@ -564,7 +560,6 @@
 			);
 			name = eqMac;
 			packageProductDependencies = (
-				78D8C3312569B2910084739C /* LaunchAtLogin */,
 				78242E95261A8AEE00058ADE /* Connectivity */,
 				7893D5742674F6B100F3815B /* Version */,
 				78AA48F3270362AA007CDE89 /* BetterCodable */,
@@ -607,7 +602,6 @@
 			);
 			mainGroup = E086AFF31FCCB8E700CF9F0D;
 			packageReferences = (
-				78D8C3302569B2910084739C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */,
 				78242E94261A8AEE00058ADE /* XCRemoteSwiftPackageReference "connectivity" */,
 				7893D5732674F6B100F3815B /* XCRemoteSwiftPackageReference "Version" */,
 				78AA48F2270362AA007CDE89 /* XCRemoteSwiftPackageReference "BetterCodable" */,
@@ -690,34 +684,6 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		E0A48D6323C61CC200700C39 /* Run Script - Hardruntime + Sign LaunchAtLogin */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Run Script - Hardruntime + Sign LaunchAtLogin";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [[ $CONFIGURATION == \"Debug\" ]]; then\nexit 0\nfi\n\nLOCATION=\"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/Library/LoginItems/LaunchAtLoginHelper.app\"\n\n# By default, use the configured code signing identity for the project/target\nIDENTITY=\"${CODE_SIGN_IDENTITY}\"\nif [ \"$IDENTITY\" == \"\" ]\nthen\n# If a code signing identity is not specified, use ad hoc signing\nIDENTITY=\"-\"\nfi\necho \"Hardening Launch At Login Helper with developer identity \\\"$IDENTITY\\\"...\"\ncodesign --verbose --force --deep -o runtime --sign \"$IDENTITY\" \"$LOCATION\"\n";
-		};
-		E0F4FD9A22888AC300BEB0A6 /* Run Script - LaunchAtLogin copy-helper */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Run Script - LaunchAtLogin copy-helper";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${BUILT_PRODUCTS_DIR}/LaunchAtLogin_LaunchAtLogin.bundle/Contents/Resources/copy-helper-swiftpm.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1108,14 +1074,6 @@
 				minimumVersion = 0.4.0;
 			};
 		};
-		78D8C3302569B2910084739C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/bitgapp/LaunchAtLogin";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.0.1;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1133,11 +1091,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 78AA48F2270362AA007CDE89 /* XCRemoteSwiftPackageReference "BetterCodable" */;
 			productName = BetterCodable;
-		};
-		78D8C3312569B2910084739C /* LaunchAtLogin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 78D8C3302569B2910084739C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */;
-			productName = LaunchAtLogin;
 		};
 		78F28AD4274D25580005474D /* Shared */ = {
 			isa = XCSwiftPackageProductDependency;
