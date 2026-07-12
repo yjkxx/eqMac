@@ -48,6 +48,8 @@ jobs:
         run: |
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' 'build/products/eqMac dB.app/Contents/Info.plist')" = 'com.local.eqmacdb'
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' 'build/products/eqMacDB.driver/Contents/Info.plist')" = 'com.local.eqmacdb.driver'
+          test -f 'build/products/eqMac dB.app/Contents/Resources/Assets/Embedded/ui.zip'
+          unzip -t 'build/products/eqMac dB.app/Contents/Resources/Assets/Embedded/ui.zip'
 
       - name: Package build
         run: |

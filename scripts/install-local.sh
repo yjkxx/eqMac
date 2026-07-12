@@ -58,8 +58,9 @@ codesign --verify --deep --strict --verbose=2 "$target_driver"
 codesign --verify --deep --strict --verbose=2 "$target_app"
 chown -R "$owner:$owner_group" "$backup_root"
 
-launchctl kickstart -k system/com.apple.audio.coreaudiod
+/usr/bin/killall -9 coreaudiod || true
 
 print "Installed eqMac dB without changing the official eqMac app or driver."
 print "Previous fork files, if any, were moved to: $backup_root"
+print "Core Audio was asked to restart. Reboot if the new driver does not appear."
 print "Open /Applications/eqMac dB.app to test it."

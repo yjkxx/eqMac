@@ -103,19 +103,42 @@ class UI: StoreSubscriber {
   
   static var domain = Constants.UI_ENDPOINT_URL.host!
 
-  static func unarchiveZip () {
+  @discardableResult
+  static func unarchiveZip () -> Bool {
     // Unpack Archive
     let fs = FileManager.default
-    
-    if fs.fileExists(atPath: remoteZipPath.path) {
-      try! Zip.unzipFile(remoteZipPath, destination: localPath, overwrite: true, password: nil) // Unzip
-    } else {
-      if !fs.fileExists(atPath: localZipPath.path) {
-        Console.log("\(localZipPath.path) doesnt exist")
-        let bundleUIZipPath = Bundle.main.url(forResource: "ui", withExtension: "zip", subdirectory: "Embedded")!
-        try! fs.copyItem(at: bundleUIZipPath, to: localZipPath)
+
+    do {
+      if fs.fileExists(atPath: remoteZipPath.path) {
+        try Zip.unzipFile(remoteZipPath, destination: localPath, overwrite: true, password: nil)
+      } else {
+        if !fs.fileExists(atPath: localZipPath.path) {
+          Console.log("\(localZipPath.path) doesn't exist")
+          let bundleUIZipPath = Bundle.main.url(
+            forResource: "ui",
+            withExtension: "zip",
+            subdirectory: "Assets/Embedded"
+          ) ?? Bundle.main.url(
+            forResource: "ui",
+            withExtension: "zip",
+            subdirectory: "Embedded"
+          )
+          guard let bundleUIZipPath = bundleUIZipPath else {
+            let message = "Bundled UI archive is missing from eqMac dB.app."
+            Console.log(message)
+            Application.error.emit(message)
+            return false
+          }
+          try fs.copyItem(at: bundleUIZipPath, to: localZipPath)
+        }
+        try Zip.unzipFile(localZipPath, destination: localPath, overwrite: true, password: nil)
       }
-      try! Zip.unzipFile(localZipPath, destination: localPath, overwrite: true, password: nil) // Unzip
+      return true
+    } catch {
+      let message = "Failed to load the bundled UI archive: \(error.localizedDescription)"
+      Console.log(message)
+      Application.error.emit(message)
+      return false
     }
   }
   
@@ -405,7 +428,7 @@ class UI: StoreSubscriber {
         if remoteVersion != nil {
           let fs = FileManager.default
           if fs.fileExists(atPath: remoteZipPath.path) {
-            unarchiveZip()
+            guard unarchiveZip() else { return }
             let currentVersion = try? String(contentsOf: localPath.appendingPathComponent("version.txt"))
             if (currentVersion?.trim() != remoteVersion?.trim()) {
               self.cacheRemote()
@@ -419,7 +442,7 @@ class UI: StoreSubscriber {
 
     func loadLocal () {
       Console.log("Loading Local UI")
-      unarchiveZip()
+      guard unarchiveZip() else { return }
       let url = URL(string: "\(localPath)/index.html")!
       startUILoad(url)
     }

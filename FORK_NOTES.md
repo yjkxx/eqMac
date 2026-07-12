@@ -67,7 +67,8 @@ After a successful build:
 ```
 
 The install script verifies both bundle IDs, installs only the fork-specific
-app and driver, fixes HAL-driver ownership, and restarts Core Audio. Any prior
+app and driver, fixes HAL-driver ownership, and asks Core Audio to relaunch by
+terminating `coreaudiod`. Any prior
 fork build is moved to a timestamped backup instead of being deleted.
 
 To remove only the fork and leave official eqMac untouched:

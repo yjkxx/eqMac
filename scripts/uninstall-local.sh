@@ -26,7 +26,8 @@ if [[ -d "$target_app" ]]; then
 fi
 
 chown -R "$owner:$owner_group" "$backup_root"
-launchctl kickstart -k system/com.apple.audio.coreaudiod
+/usr/bin/killall -9 coreaudiod || true
 
 print "Removed only the eqMac dB fork. Files were moved to: $backup_root"
+print "Core Audio was asked to restart. Reboot if the device list does not refresh."
 print "The official eqMac installation was not changed."
