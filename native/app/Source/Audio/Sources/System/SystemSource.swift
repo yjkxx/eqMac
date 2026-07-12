@@ -14,19 +14,23 @@ import AMCoreAudio
 import SwiftyUserDefaults
 
 class SystemAudioSource: InputSource {
-  private let tap: SystemAudioTap
+  // Kept type-erased so the app can retain the macOS 14.2-only tap while the
+  // project continues to compile with its older deployment target.
+  private let tapOwner: AnyObject
 
   init () {
     guard #available(macOS 14.2, *) else {
       fatalError("eqMac dB system-audio capture requires macOS 14.2 or newer")
     }
 
+    let audioTap: SystemAudioTap
     do {
-      tap = try SystemAudioTap(outputDeviceUID: Constants.DRIVER_DEVICE_UID)
+      audioTap = try SystemAudioTap(outputDeviceUID: Constants.DRIVER_DEVICE_UID)
     } catch {
       fatalError("Could not create the eqMac dB system-audio tap: \(error)")
     }
-    super.init(device: tap.device)
+    tapOwner = audioTap
+    super.init(device: audioTap.device)
   }
 }
 
