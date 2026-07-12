@@ -985,7 +985,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = singlefile;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR) $(PROJECT_DIR)/Source/Vendor";
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR) $(PROJECT_DIR)/Source/Vendor $(PODS_ROOT)/Zip/Zip/minizip/module";
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/Source/Helpers/ExceptionCatcher.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1052,7 +1052,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR) $(PROJECT_DIR)/Source/Vendor";
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(PROJECT_DIR) $(PROJECT_DIR)/Source/Vendor $(PODS_ROOT)/Zip/Zip/minizip/module";
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/Source/Helpers/ExceptionCatcher.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
