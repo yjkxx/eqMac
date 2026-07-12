@@ -25,7 +25,10 @@ class SystemAudioSource: InputSource {
 
     let audioTap: SystemAudioTap
     do {
-      audioTap = try SystemAudioTap(outputDeviceUID: Constants.DRIVER_DEVICE_UID)
+      audioTap = try SystemAudioTap(
+        outputDeviceUID: Constants.DRIVER_DEVICE_UID,
+        clockDeviceUID: Application.selectedDevice?.uid ?? Constants.TARGET_OUTPUT_DEVICE_UID
+      )
     } catch {
       fatalError("Could not create the eqMac dB system-audio tap: \(error)")
     }
@@ -63,7 +66,7 @@ private final class SystemAudioTap {
   private var tapID = AudioObjectID(kAudioObjectUnknown)
   private var aggregateID = AudioObjectID(kAudioObjectUnknown)
 
-  init(outputDeviceUID: String) throws {
+  init(outputDeviceUID: String, clockDeviceUID: String) throws {
     let description = CATapDescription(
       excludingProcesses: [],
       deviceUID: outputDeviceUID,
@@ -89,6 +92,13 @@ private final class SystemAudioTap {
       kAudioAggregateDeviceNameKey: "eqMac dB Capture",
       kAudioAggregateDeviceUIDKey: aggregateUID,
       kAudioAggregateDeviceIsPrivateKey: true,
+      // AVAudioEngine's legacy HAL input helper only accepts a duplex current
+      // device. The target DAC supplies the aggregate's muted output side and
+      // clock; the process tap remains its sole input source.
+      kAudioAggregateDeviceSubDeviceListKey: [[
+        kAudioSubDeviceUIDKey: clockDeviceUID
+      ]],
+      kAudioAggregateDeviceMainSubDeviceKey: clockDeviceUID,
       kAudioAggregateDeviceTapAutoStartKey: true,
       kAudioAggregateDeviceTapListKey: [tapEntry]
     ]
