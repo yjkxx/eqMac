@@ -125,10 +125,12 @@ private final class SystemAudioTap {
 
     // HAL publishes a newly-created aggregate's tap stream asynchronously.
     // AVAudioEngine sees a 0 Hz / 0 channel format if it is attached too soon.
-    for _ in 0..<100 where aggregateDevice.channels(direction: .recording) == 0 {
+    for _ in 0..<100 where aggregateDevice.channels(direction: .recording) == 0
+      || aggregateDevice.channels(direction: .playback) == 0 {
       usleep(20_000)
     }
-    guard aggregateDevice.channels(direction: .recording) > 0 else {
+    guard aggregateDevice.channels(direction: .recording) > 0,
+          aggregateDevice.channels(direction: .playback) > 0 else {
       AudioHardwareDestroyAggregateDevice(aggregateID)
       AudioHardwareDestroyProcessTap(tapID)
       aggregateID = AudioObjectID(kAudioObjectUnknown)
