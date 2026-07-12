@@ -38,6 +38,7 @@ private enum SystemAudioTapError: Error, CustomStringConvertible {
   case createTap(OSStatus)
   case createAggregate(OSStatus)
   case lookupAggregate(AudioObjectID)
+  case aggregateInputTimeout(AudioObjectID)
 
   var description: String {
     switch self {
@@ -47,6 +48,8 @@ private enum SystemAudioTapError: Error, CustomStringConvertible {
       return "AudioHardwareCreateAggregateDevice failed (\(status))"
     case .lookupAggregate(let id):
       return "Core Audio did not expose aggregate device \(id)"
+    case .aggregateInputTimeout(let id):
+      return "Core Audio aggregate device \(id) did not publish its tap input stream"
     }
   }
 }
@@ -108,6 +111,19 @@ private final class SystemAudioTap {
       aggregateID = AudioObjectID(kAudioObjectUnknown)
       tapID = AudioObjectID(kAudioObjectUnknown)
       throw SystemAudioTapError.lookupAggregate(newAggregateID)
+    }
+
+    // HAL publishes a newly-created aggregate's tap stream asynchronously.
+    // AVAudioEngine sees a 0 Hz / 0 channel format if it is attached too soon.
+    for _ in 0..<100 where aggregateDevice.channels(direction: .recording) == 0 {
+      usleep(20_000)
+    }
+    guard aggregateDevice.channels(direction: .recording) > 0 else {
+      AudioHardwareDestroyAggregateDevice(aggregateID)
+      AudioHardwareDestroyProcessTap(tapID)
+      aggregateID = AudioObjectID(kAudioObjectUnknown)
+      tapID = AudioObjectID(kAudioObjectUnknown)
+      throw SystemAudioTapError.aggregateInputTimeout(newAggregateID)
     }
     device = aggregateDevice
   }
