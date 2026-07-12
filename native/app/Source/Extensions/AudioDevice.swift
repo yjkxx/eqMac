@@ -3,6 +3,7 @@ import AMCoreAudio
 import SwiftyUserDefaults
 import CoreFoundation
 import CoreAudio
+import AudioToolbox.AudioServices
 import EmitterKit
 
 extension AudioDevice {
